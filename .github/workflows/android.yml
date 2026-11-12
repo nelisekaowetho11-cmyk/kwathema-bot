@@ -1,46 +1,19 @@
 
-name: Build PRIME NET VPN
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application
+        android:allowBackup="false"
+        android:label="PRIME NET VPN"
+        android:theme="@android:style/Theme.Material.NoActionBar">
 
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
+        <activity
+            android:name="com.primenet.vpn.MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Java
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Diagnose manifest
-        run: |
-          echo "MANIFEST LOCATION:"
-          ls -la app/src/main/
-          echo "MANIFEST CONTENT:"
-          cat -n app/src/main/AndroidManifest.xml
-          echo "XML VALIDATION:"
-          python3 -c "import xml.etree.ElementTree as ET; ET.parse('app/src/main/AndroidManifest.xml'); print('XML VALID')"
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.9'
-
-      - name: Build APK
-        run: gradle :app:assembleDebug --stacktrace --info
-
-      - name: Upload APK
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: PRIME-NET-VPN-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+    </application>
+</manifest>
