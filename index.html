@@ -19,7 +19,7 @@ label{color:#1a2a55;font-weight:700;font-size:14px}input{width:100%;background:t
 <body>
 <div>👑</div><div class="top">PRIME VPN</div>
 
-<!-- LOGIN - EXACTLY PICTURE 1 -->
+<!-- LOGIN - EMPTY, YOU TYPE WHAT YOU CREATED ON PANEL -->
 <div id="loginScreen">
 <h1>LOGIN</h1><div class="sub">Sign in to continue</div>
 <div class="card"><label>Username</label><input id="u" placeholder="Enter your username"></div>
@@ -32,32 +32,30 @@ label{color:#1a2a55;font-weight:700;font-size:14px}input{width:100%;background:t
 <p id="msg"></p>
 </div>
 
-<!-- HOME - EXACTLY PICTURE 2 -->
+<!-- HOME - CONFIG NAME COMES FROM PANEL ONLY -->
 <div id="homeScreen" style="display:none">
 <h1 id="homeTitle">HOME</h1>
 <div class="pcircle" id="pcircle" onclick="toggle()">P</div>
 <div id="connText" style="font-size:26px;color:#5ecbff;font-weight:800">Tap to connect</div>
 <div class="sub" id="connSub">Not Connected</div>
-<div class="card">Active Configuration<br><b id="activeConfig">CELLC UNLIMITED • v2ray</b> <span id="badge" style="background:#2a4a2a;padding:4px 8px;border-radius:20px;font-size:12px">● Not Connected</span></div>
+<div class="card">Active Configuration<br><b id="activeConfig">---</b> <span id="badge" style="background:#2a4a2a;padding:4px 8px;border-radius:20px;font-size:12px">● Not Connected</span></div>
 <div class="card" style="display:flex;justify-content:space-between"><div>Uploaded<br><b id="up" style="font-size:26px">0 MB</b></div><div>Downloaded<br><b id="down" style="font-size:26px">0 MB</b></div></div>
 <p id="vpnMsg" style="font-size:13px;color:#8ea6d8"></p>
 </div>
 
-<!-- ACCOUNT - EXACTLY PICTURE 3 -->
+<!-- ACCOUNT - ALL FROM PANEL, NOTHING FIXED -->
 <div id="accScreen" style="display:none">
 <h1>ACCOUNT</h1>
-<div class="card"><label>Username</label><div style="font-size:20px" id="accUser">prime_user123</div></div>
-<div class="card"><label>Password</label><div id="accPass">••••••••••</div></div>
-<div style="display:flex;gap:10px"><div class="card" style="flex:1">Plan <span style="background:#e8c77a;color:#000;font-size:10px;padding:3px 6px;border-radius:10px">PREMIUM</span><br><b id="accPlan">Premium</b></div><div class="card" style="flex:1">Valid For<br><b id="accValid">30 Days</b></div></div>
-<div class="card">Expiry Date<br><b id="accExpiry">Aug 14, 2026</b></div>
-<div class="card">Days Left <b id="accDays" style="float:right;color:#2fc5ff">27 Days Left</b><div class="bar" style="margin-top:10px"><div class="fill" id="daysBar" style="width:90%"></div></div><small id="accDaysSmall">27 of 30 days remaining</small></div>
-<div class="card">Active Configuration<br><b id="activeConfig2">CELLC UNLIMITED</b> <span style="color:#4dff88">● Active</span></div>
+<div class="card"><label>Username</label><div style="font-size:20px" id="accUser">---</div></div>
+<div class="card"><label>Password</label><div id="accPass">---</div></div>
+<div style="display:flex;gap:10px"><div class="card" style="flex:1">Plan<br><b id="accPlan">---</b></div><div class="card" style="flex:1">Valid For<br><b id="accValid">---</b></div></div>
+<div class="card">Expiry Date<br><b id="accExpiry">---</b></div>
+<div class="card">Days Left <b id="accDays" style="float:right;color:#2fc5ff">---</b><div class="bar" style="margin-top:10px"><div class="fill" id="daysBar" style="width:0%"></div></div><small id="accDaysSmall">---</small></div>
+<div class="card">Active Configuration<br><b id="activeConfig2">---</b> <span style="color:#4dff88">● Active</span></div>
 </div>
 
 <div class="nav"><div id="nHome" onclick="show('home')">🏠<br>Home</div><div id="nAcc" class="active" onclick="show('acc')">👤<br>Account</div></div>
 <script>
-// PANEL LINK: https://prime-net-admin-1--nelisekaowethu.replit.app/
-// ADMIN WHATSAPP: +2774 706 3604
 const PANEL_URL = "https://prime-net-admin-1--nelisekaowethu.replit.app/";
 let connected=false; let currentUser=null;
 function show(s){document.getElementById('homeScreen').style.display=s=='home'?'block':'none';document.getElementById('accScreen').style.display=s=='acc'?'block':'none';document.getElementById('nHome').className=s=='home'?'active':'';document.getElementById('nAcc').className=s=='acc'?'active':'';}
@@ -73,6 +71,7 @@ if(!found){document.getElementById('msg').innerText='Wrong username or password 
 if(found.status!=='active'){document.getElementById('msg').innerText='Account Killed / Offline';return;}
 if(new Date(found.expiry) < new Date()){document.getElementById('msg').innerText='Account Expired on '+found.expiry;return;}
 currentUser=found;
+// EVERYTHING COMES FROM PANEL - NOTHING FIXED
 document.getElementById('activeConfig').innerText = found.config + ' • ' + found.protocol;
 document.getElementById('activeConfig2').innerText = found.config;
 document.getElementById('accUser').innerText = found.username;
@@ -102,4 +101,4 @@ document.getElementById('vpnMsg').innerText=connected?('Connected using: ' + cur
 }
 </script>
 </body>
-</html>
+  </html>
