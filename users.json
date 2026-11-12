@@ -1,8 +1,0 @@
-{
-  "mode": "panel",
-  "panel_url": "https://prime-net-admin-1--nelisekaowethu.replit.app",
-  "login_api": "https://prime-net-admin-1--nelisekaowethu.replit.app/api/login?username={username}&password={password}",
-  "lookup": "by_username",
-  "instruction": "DO NOT use a fixed user list. When a user logs in, take the username and password they typed and ask the panel_url for that exact username. Show whatever username, plan, daysLeft, expiry and config the panel returns for that username. If panel says sipho, show sipho. If panel says thabo, show thabo. If panel says a new name I just created, show that new name.",
-  "users": []
-}
