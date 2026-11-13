@@ -74,7 +74,7 @@ class MainActivity : Activity() {
 
             setContentView(layout)
 
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             val error = TextView(this).apply {
                 text = "Startup error: ${e.javaClass.simpleName}\n${e.message}"
                 setTextColor(Color.RED)
