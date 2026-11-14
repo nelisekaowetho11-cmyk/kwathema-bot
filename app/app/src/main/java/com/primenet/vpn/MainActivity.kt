@@ -3,10 +3,12 @@ package com.primenet.vpn
 
 import android.app.Activity
 import android.os.Bundle
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.content.res.ColorStateList
+import android.text.InputType
 import android.view.Gravity
 import android.view.View
 import android.widget.*
@@ -26,15 +28,12 @@ class MainActivity : Activity() {
 
     private fun rounded(
         color: Int,
-        radius: Int = 22,
-        stroke: Int = Color.TRANSPARENT
+        radius: Int = 20
     ): GradientDrawable {
         return GradientDrawable().apply {
             setColor(color)
             cornerRadius = dp(radius).toFloat()
-            if (stroke != Color.TRANSPARENT) {
-                setStroke(dp(1), stroke)
-            }
+            setStroke(dp(1), Color.rgb(230, 233, 238))
         }
     }
 
@@ -54,31 +53,101 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun makeButton(value: String, action: () -> Unit): Button {
+    private fun makeButton(
+        value: String,
+        action: () -> Unit
+    ): Button {
         return Button(this).apply {
             text = value
             textSize = 16f
             setTextColor(Color.WHITE)
             backgroundTintList = ColorStateList.valueOf(blue)
-            setOnClickListener { action() }
+            setOnClickListener {
+                runSafely(action)
+            }
+        }
+    }
+
+    private fun runSafely(action: () -> Unit) {
+        try {
+            action()
+        } catch (error: Throwable) {
+            showError(error)
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        runSafely {
+            showLogin()
+        }
+    }
+
+    private fun showError(error: Throwable) {
+        try {
+            val message = TextView(this).apply {
+                text = "PRIME NET STARTUP ERROR\n\n" +
+                    error.javaClass.simpleName +
+                    "\n" + (error.message ?: "No error details")
+                textSize = 16f
+                setTextColor(Color.RED)
+                setPadding(dp(20), dp(20), dp(20), dp(20))
+            }
+
+            setContentView(ScrollView(this).apply {
+                addView(message)
+            })
+        } catch (_: Throwable) {
+            // Avoid another crash while displaying an error.
+        }
+    }
+
+    private fun setup(showNavigation: Boolean = false) {
+        root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.rgb(249, 250, 252))
+        }
+
+        val scroll = ScrollView(this)
+
+        content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(18), dp(20), dp(18))
+        }
+
+        scroll.addView(content)
+
+        root.addView(
+            scroll,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            )
+        )
+
+        setContentView(root)
+
+        if (showNavigation) {
+            addNavigation()
         }
     }
 
     private fun gap(height: Int) {
-        content.addView(View(this), LinearLayout.LayoutParams(
-            1, dp(height)
-        ))
+        content.addView(
+            View(this),
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(height)
+            )
+        )
     }
 
     private fun card(): LinearLayout {
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), dp(15), dp(18), dp(15))
-            background = rounded(
-                Color.WHITE,
-                22,
-                Color.rgb(230, 233, 238)
-            )
+            setPadding(dp(16), dp(14), dp(16), dp(14))
+            background = rounded(Color.WHITE)
         }
     }
 
@@ -87,114 +156,162 @@ class MainActivity : Activity() {
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
-        params.setMargins(0, dp(8), 0, dp(8))
+        params.setMargins(0, dp(7), 0, dp(7))
         content.addView(view, params)
     }
 
-    private fun setup() {
-        root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.rgb(249, 250, 252))
-        }
-
-        val scroll = ScrollView(this)
-        content = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(22), dp(20), dp(22), dp(20))
-        }
-
-        scroll.addView(content)
-
-        root.addView(scroll, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            0,
-            1f
-        ))
-
-        setContentView(root)
-        addNavigation()
-    }
-
     private fun addLogo() {
-        val image = ImageView(this).apply {
-            setImageResource(R.drawable.prime_logo)
-            scaleType = ImageView.ScaleType.FIT_CENTER
+        try {
+            val resourceId = resources.getIdentifier(
+                "prime_logo",
+                "drawable",
+                packageName
+            )
+
+            if (resourceId != 0) {
+                val bounds = BitmapFactory.Options().apply {
+                    inJustDecodeBounds = true
+                }
+
+                BitmapFactory.decodeResource(
+                    resources,
+                    resourceId,
+                    bounds
+                )
+
+                val target = dp(180).coerceAtLeast(180)
+                var sample = 1
+
+                while (
+                    bounds.outWidth / sample > target * 2 ||
+                    bounds.outHeight / sample > target * 2
+                ) {
+                    sample *= 2
+                }
+
+                val options = BitmapFactory.Options().apply {
+                    inSampleSize = sample
+                }
+
+                val bitmap = BitmapFactory.decodeResource(
+                    resources,
+                    resourceId,
+                    options
+                )
+
+                if (bitmap != null) {
+                    val image = ImageView(this).apply {
+                        setImageBitmap(bitmap)
+                        scaleType = ImageView.ScaleType.FIT_CENTER
+                    }
+
+                    content.addView(
+                        image,
+                        LinearLayout.LayoutParams(
+                            dp(130),
+                            dp(120)
+                        ).apply {
+                            gravity = Gravity.CENTER
+                        }
+                    )
+                } else {
+                    content.addView(
+                        label("PRIME NET VPN", 25f, gold, true)
+                    )
+                }
+            } else {
+                content.addView(
+                    label("PRIME NET VPN", 25f, gold, true)
+                )
+            }
+        } catch (_: Throwable) {
+            content.addView(
+                label("PRIME NET VPN", 25f, gold, true)
+            )
         }
 
-        content.addView(image, LinearLayout.LayoutParams(
-            dp(115), dp(115)
-        ).apply {
-            gravity = Gravity.CENTER
-        })
-
-        content.addView(label("PRIME VPN", 27f, gold, true))
+        content.addView(label("PRIME VPN", 22f, gold, true))
     }
 
     private fun addNavigation() {
         val nav = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
-            background = rounded(Color.WHITE, 20)
-            setPadding(dp(8), dp(8), dp(8), dp(8))
+            background = rounded(Color.WHITE)
+            setPadding(dp(6), dp(5), dp(6), dp(5))
         }
 
-        val home = label("⌂\nHome", 18f, blue, true)
-        val account = label("●\nAccount", 18f, grey, true)
+        val home = label("⌂\nHome", 17f, blue, true)
+        val account = label("●\nAccount", 17f, grey, true)
 
-        home.setOnClickListener { showHome() }
-        account.setOnClickListener { showAccount() }
+        home.setOnClickListener {
+            runSafely { showHome() }
+        }
 
-        nav.addView(home, LinearLayout.LayoutParams(0, dp(75), 1f))
-        nav.addView(account, LinearLayout.LayoutParams(0, dp(75), 1f))
+        account.setOnClickListener {
+            runSafely { showAccount() }
+        }
 
-        root.addView(nav, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            dp(85)
-        ).apply {
-            setMargins(dp(18), dp(6), dp(18), dp(12))
-        })
-    }
+        nav.addView(
+            home,
+            LinearLayout.LayoutParams(0, dp(65), 1f)
+        )
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        showLogin()
+        nav.addView(
+            account,
+            LinearLayout.LayoutParams(0, dp(65), 1f)
+        )
+
+        root.addView(
+            nav,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(78)
+            ).apply {
+                setMargins(dp(16), dp(5), dp(16), dp(10))
+            }
+        )
     }
 
     private fun showLogin() {
         setup()
         addLogo()
 
-        gap(18)
+        gap(15)
         content.addView(label("LOGIN", 25f, dark, true))
-        content.addView(label("Sign in to continue", 16f, grey))
+        content.addView(
+            label("Sign in to continue", 16f, grey)
+        )
 
         val username = EditText(this).apply {
             hint = "Enter your Username"
             singleLine = true
             textSize = 16f
-            background = rounded(Color.WHITE, 18,
-                Color.rgb(220, 224, 230))
-            setPadding(dp(16), dp(15), dp(16), dp(15))
+            background = rounded(Color.WHITE)
+            setPadding(dp(15), dp(14), dp(15), dp(14))
         }
 
         val password = EditText(this).apply {
             hint = "Enter your password"
-            inputType = 129
             singleLine = true
+            inputType = InputType.TYPE_CLASS_TEXT or
+                InputType.TYPE_TEXT_VARIATION_PASSWORD
             textSize = 16f
-            background = rounded(Color.WHITE, 18,
-                Color.rgb(220, 224, 230))
-            setPadding(dp(16), dp(15), dp(16), dp(15))
+            background = rounded(Color.WHITE)
+            setPadding(dp(15), dp(14), dp(15), dp(14))
         }
 
-        gap(16)
+        gap(12)
         addCard(username)
         addCard(password)
 
         gap(12)
+
         content.addView(makeButton("LOGIN") {
-            if (username.text.isNullOrBlank() ||
-                password.text.isNullOrBlank()) {
+            if (
+                username.text.isNullOrBlank() ||
+                password.text.isNullOrBlank()
+            ) {
                 Toast.makeText(
                     this,
                     "Enter your username and password.",
@@ -203,32 +320,38 @@ class MainActivity : Activity() {
             } else {
                 Toast.makeText(
                     this,
-                    "Login API is not connected yet.",
+                    "Admin login API is not connected yet.",
                     Toast.LENGTH_LONG
                 ).show()
             }
         })
 
-        gap(12)
-        content.addView(label("Forgot Password?", 15f, blue))
-        content.addView(label(
-            "Don't have an account?\nContact Admin",
-            16f,
-            blue
-        ))
+        gap(10)
+
+        content.addView(
+            label("Forgot Password?", 15f, blue)
+        )
+
+        content.addView(
+            label(
+                "Don't have an account?\nContact Admin",
+                16f,
+                blue
+            )
+        )
     }
 
     private fun showHome() {
-        setup()
+        setup(true)
         addLogo()
-        gap(20)
+        gap(15)
 
         val connected =
             VpnState.state == VpnConnectionState.CONNECTED
 
         val circle = TextView(this).apply {
             text = "P"
-            textSize = 100f
+            textSize = 90f
             gravity = Gravity.CENTER
             setTextColor(blue)
             background = GradientDrawable().apply {
@@ -238,134 +361,112 @@ class MainActivity : Activity() {
             }
         }
 
-        content.addView(circle, LinearLayout.LayoutParams(
-            dp(220), dp(220)
-        ).apply {
-            gravity = Gravity.CENTER
-        })
+        content.addView(
+            circle,
+            LinearLayout.LayoutParams(
+                dp(210),
+                dp(210)
+            ).apply {
+                gravity = Gravity.CENTER
+            }
+        )
 
-        gap(12)
+        gap(10)
 
-        content.addView(label(
-            if (connected) "Connected" else "Tap to connect",
-            27f,
-            blue,
-            true
-        ))
+        content.addView(
+            label(
+                if (connected) "Connected" else "Not Connected",
+                25f,
+                blue,
+                true
+            )
+        )
 
-        content.addView(label(
-            if (connected) "VPN connection active"
-            else "Not Connected",
-            17f,
-            dark
-        ))
+        content.addView(
+            label(VpnState.message, 16f, dark)
+        )
 
-        gap(18)
+        gap(15)
 
         val config = card()
-        config.addView(label("Active Configuration", 16f, grey))
-        config.addView(label(
-            "Not available yet",
-            20f,
-            dark,
-            true
-        ))
+        config.addView(
+            label("Active Configuration", 16f, grey)
+        )
+        config.addView(
+            label("Unavailable", 19f, dark, true)
+        )
         addCard(config)
 
         val usage = card()
-        val usageRow = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-        }
-
-        usageRow.addView(label(
-            "Uploaded\nUnavailable",
-            18f,
-            dark,
-            true
-        ), LinearLayout.LayoutParams(0, dp(90), 1f))
-
-        usageRow.addView(label(
-            "Downloaded\nUnavailable",
-            18f,
-            dark,
-            true
-        ), LinearLayout.LayoutParams(0, dp(90), 1f))
-
-        usage.addView(usageRow)
+        usage.addView(
+            label("Data Usage", 18f, dark, true)
+        )
+        usage.addView(
+            label("Uploaded: Unavailable", 16f)
+        )
+        usage.addView(
+            label("Downloaded: Unavailable", 16f)
+        )
         addCard(usage)
 
         gap(10)
 
-        content.addView(makeButton(
-            if (connected) "DISCONNECT" else "CONNECT"
-        ) {
-            Toast.makeText(
-                this,
-                "VPN engine is not connected yet. No tunnel was started.",
-                Toast.LENGTH_LONG
-            ).show()
-        })
+        content.addView(
+            makeButton(
+                if (connected) "DISCONNECT" else "CONNECT"
+            ) {
+                Toast.makeText(
+                    this,
+                    "VPN engine is not implemented yet.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        )
     }
 
     private fun showAccount() {
-        setup()
+        setup(true)
         addLogo()
-        gap(16)
+        gap(10)
 
-        content.addView(label("MY ACCOUNT", 24f, dark, true))
+        content.addView(
+            label("MY ACCOUNT", 24f, dark, true)
+        )
 
         val account = AccountManager.account
-
         val details = card()
 
-        details.addView(label(
-            "Username",
-            16f,
-            grey
-        ))
-
-        details.addView(label(
-            account?.username ?: "Not available",
-            20f,
-            dark,
-            true
-        ))
+        details.addView(label("Username", 16f, grey))
+        details.addView(
+            label(account?.username ?: "Not available", 19f, dark, true)
+        )
 
         details.addView(label("Password", 16f, grey))
-        details.addView(label("••••••••", 20f, dark, true))
+        details.addView(label("••••••••", 19f, dark, true))
 
         details.addView(label("Expiry Date", 16f, grey))
-        details.addView(label(
-            account?.expiryDate ?: "Not available",
-            19f,
-            dark,
-            true
-        ))
+        details.addView(
+            label(account?.expiryDate ?: "Not available", 18f, dark, true)
+        )
 
         details.addView(label("Account Status", 16f, grey))
-        details.addView(label(
-            account?.let {
-                if (it.active) "Active" else "Inactive"
-            } ?: "Awaiting server data",
-            19f,
-            dark,
-            true
-        ))
+        details.addView(
+            label(
+                account?.let {
+                    if (it.active) "Active" else "Inactive"
+                } ?: "Awaiting server data",
+                18f,
+                dark,
+                true
+            )
+        )
 
         addCard(details)
 
         val usage = card()
-        usage.addView(label("Data Usage", 19f, dark, true))
-        usage.addView(label(
-            "Uploaded: Unavailable",
-            16f,
-            dark
-        ))
-        usage.addView(label(
-            "Downloaded: Unavailable",
-            16f,
-            dark
-        ))
+        usage.addView(label("Data Usage", 18f, dark, true))
+        usage.addView(label("Uploaded: Unavailable", 16f))
+        usage.addView(label("Downloaded: Unavailable", 16f))
         addCard(usage)
 
         gap(10)
@@ -373,7 +474,7 @@ class MainActivity : Activity() {
         content.addView(makeButton("PING TEST") {
             Toast.makeText(
                 this,
-                "Ping requires your assigned VPN server address.",
+                "Ping needs the assigned server address.",
                 Toast.LENGTH_LONG
             ).show()
         })
@@ -383,10 +484,12 @@ class MainActivity : Activity() {
         content.addView(makeButton("LOG OUT") {
             VpnConfig.clear()
             AccountManager.account = null
+
             VpnState.update(
                 VpnConnectionState.DISCONNECTED,
                 "Not connected"
             )
+
             showLogin()
         })
     }
