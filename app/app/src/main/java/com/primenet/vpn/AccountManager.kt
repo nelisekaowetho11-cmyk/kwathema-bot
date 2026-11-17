@@ -2,16 +2,28 @@
 package com.primenet.vpn
 
 data class AccountInfo(
+    val accountId: String = "",
     val username: String,
     val expiryDate: String,
     val active: Boolean,
-    val uploadedBytes: Long,
-    val downloadedBytes: Long
+    val protocol: String = "",
+    val configuration: String? = null,
+    val uploadedBytes: Long = 0L,
+    val downloadedBytes: Long = 0L
 )
 
 object AccountManager {
 
     var account: AccountInfo? = null
+        private set
+
+    fun setAccount(value: AccountInfo) {
+        account = value
+    }
+
+    fun clear() {
+        account = null
+    }
 
     fun formatBytes(bytes: Long): String {
         if (bytes < 0) return "Unavailable"
