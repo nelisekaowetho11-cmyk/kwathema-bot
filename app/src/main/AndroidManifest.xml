@@ -11,7 +11,7 @@
     <application
         android:allowBackup="false"
         android:usesCleartextTraffic="false"
-        android:label="PrimeNet VPN"
+        android:label="PRIME NET VPN"
         android:theme="@android:style/Theme.Material.NoActionBar">
 
         <activity
