@@ -10,7 +10,7 @@
 
     <application
         android:allowBackup="false"
-        android:label="PRIME NET VPN"
+        android:label="PrimeNet VPN"
         android:theme="@android:style/Theme.Material.NoActionBar">
 
         <activity
