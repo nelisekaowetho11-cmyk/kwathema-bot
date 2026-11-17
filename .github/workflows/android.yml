@@ -1,5 +1,5 @@
 
-name: PrimeNet VPN Android Build
+name: PRIME NET VPN Android Build
 
 on:
   push:
@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   build:
-    name: Build PrimeNet VPN
+    name: Build PRIME NET VPN
     runs-on: ubuntu-latest
 
     steps:
@@ -31,7 +31,7 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Clean and Validate Android Manifest
+      - name: Repair and Validate Manifest
         shell: bash
         run: |
           python3 - <<'PY'
@@ -39,35 +39,39 @@ jobs:
           import re
           import xml.etree.ElementTree as ET
 
-          manifest = Path("app/src/main/AndroidManifest.xml")
-          content = manifest.read_text(encoding="utf-8-sig")
+          path = Path("app/src/main/AndroidManifest.xml")
+          content = path.read_text(encoding="utf-8-sig")
 
           content = re.sub(
-              r"<\?xml[^?]*\?>",
+              r"<\?xml.*?\?>",
               "",
               content,
-              flags=re.IGNORECASE
+              flags=re.IGNORECASE | re.DOTALL
           )
 
-          content = content.lstrip()
-          manifest.write_text(content, encoding="utf-8")
+          start = content.find("<manifest")
+          if start == -1:
+              raise SystemExit("ERROR: Manifest root not found")
 
-          ET.parse(manifest)
+          content = content[start:].lstrip()
+          path.write_text(content, encoding="utf-8")
+
+          ET.parse(path)
           print("MANIFEST OK")
           PY
 
       - name: Build Debug APK
         run: gradle --no-daemon :app:assembleDebug
 
-      - name: Rename APK
+      - name: Prepare APK
         run: |
           mkdir -p release
-          cp app/build/outputs/apk/debug/app-debug.apk release/PrimeNet-VPN.apk
+          cp app/build/outputs/apk/debug/app-debug.apk release/PRIME-NET-VPN.apk
 
-      - name: Upload PrimeNet VPN APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: PrimeNet-VPN
-          path: release/PrimeNet-VPN.apk
+          name: PRIME-NET-VPN
+          path: release/PRIME-NET-VPN.apk
           if-no-files-found: error
           retention-days: 7
