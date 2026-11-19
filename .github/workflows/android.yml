@@ -19,10 +19,10 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set Up Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -30,109 +30,31 @@ jobs:
       - name: Set Up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Verify Gradle Wrapper
+      - name: Install Android SDK 35
         run: |
-          test -f gradlew
-          test -f gradle/wrapper/gradle-wrapper.properties
-          chmod +x gradlew
+          yes | sdkmanager --licenses
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
-      - name: Set Up Gradle
+      - name: Set Up Gradle 8.9
         uses: gradle/actions/setup-gradle@v6
-
-      - name: Configure Gradle Memory
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          path = Path("gradle.properties")
-
-          settings = {
-              "org.gradle.jvmargs": "-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8",
-              "org.gradle.parallel": "false",
-              "org.gradle.workers.max": "2",
-              "android.useAndroidX": "true",
-              "android.enableJetifier": "false",
-          }
-
-          lines = path.read_text().splitlines() if path.exists() else []
-          result = []
-          found = set()
-
-          for line in lines:
-              key = line.split("=", 1)[0].strip()
-
-              if key in settings:
-                  if key not in found:
-                      result.append(f"{key}={settings[key]}")
-                      found.add(key)
-              else:
-                  result.append(line)
-
-          for key, value in settings.items():
-              if key not in found:
-                  result.append(f"{key}={value}")
-
-          path.write_text("\n".join(result) + "\n")
-          print("GRADLE SETTINGS CONFIGURED")
-          PY
-
-      - name: Repair and Validate Android Manifest
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          import xml.etree.ElementTree as ET
-
-          path = Path("app/src/main/AndroidManifest.xml")
-
-          if not path.is_file():
-              raise SystemExit("AndroidManifest.xml not found")
-
-          content = path.read_text(encoding="utf-8-sig")
-
-          content = re.sub(
-              r"<\?xml\b.*?\?>",
-              "",
-              content,
-              flags=re.IGNORECASE | re.DOTALL
-          )
-
-          start = content.find("<manifest")
-
-          if start < 0:
-              raise SystemExit("Manifest root element not found")
-
-          content = content[start:].strip()
-
-          ET.fromstring(content)
-
-          path.write_text(content + "\n", encoding="utf-8")
-
-          print("MANIFEST OK")
-          PY
+        with:
+          gradle-version: '8.9'
+          cache-disabled: true
 
       - name: Build Debug APK
         run: |
-          ./gradlew --no-daemon --stacktrace --max-workers=2 :app:assembleDebug
+          gradle --no-daemon \
+            --stacktrace \
+            --max-workers=2 \
+            :app:assembleDebug
 
       - name: Prepare APK
-        shell: bash
         run: |
-          APK="app/build/outputs/apk/debug/app-debug.apk"
-
-          if [ ! -s "$APK" ]; then
-            echo "ERROR: Debug APK was not generated."
-            exit 1
-          fi
-
           mkdir -p release
-          cp "$APK" release/PRIME-NET-VPN.apk
+          cp app/build/outputs/apk/debug/app-debug.apk \
+             release/PRIME-NET-VPN.apk
 
-          echo "APK CREATED SUCCESSFULLY"
-
-      - name: Upload PRIME NET VPN APK
+      - name: Upload PRIME NET VPN
         uses: actions/upload-artifact@v4
         with:
           name: PRIME-NET-VPN
