@@ -1,5 +1,5 @@
 
-name: PRIME NET VPN Android Build
+name: PRIME NET VPN
 
 on:
   push:
@@ -13,9 +13,9 @@ permissions:
 
 jobs:
   build:
-    name: Build PRIME NET VPN
+    name: Build PRIME NET VPN APK
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
 
     steps:
       - name: Checkout Repository
@@ -28,20 +28,28 @@ jobs:
           java-version: '17'
 
       - name: Set Up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       - name: Install Android SDK 35
         run: |
-          yes | sdkmanager --licenses
-          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+          sdkmanager --install \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
 
-      - name: Set Up Gradle 8.9
+      - name: Install Gradle 8.9
         uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: '8.9'
-          cache-disabled: true
 
-      - name: Build Debug APK
+      - name: Check Project Files
+        run: |
+          test -f settings.gradle.kts
+          test -f build.gradle.kts
+          test -f app/build.gradle.kts
+          test -f app/src/main/AndroidManifest.xml
+          echo "PROJECT FILES VERIFIED"
+
+      - name: Build PRIME NET VPN
         run: |
           gradle --no-daemon \
             --stacktrace \
@@ -50,11 +58,17 @@ jobs:
 
       - name: Prepare APK
         run: |
-          mkdir -p release
-          cp app/build/outputs/apk/debug/app-debug.apk \
-             release/PRIME-NET-VPN.apk
+          APK="app/build/outputs/apk/debug/app-debug.apk"
 
-      - name: Upload PRIME NET VPN
+          if [ ! -s "$APK" ]; then
+            echo "APK WAS NOT CREATED"
+            exit 1
+          fi
+
+          mkdir -p release
+          cp "$APK" "release/PRIME-NET-VPN.apk"
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: PRIME-NET-VPN
